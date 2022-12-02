@@ -1,21 +1,16 @@
 #include "chacha.hh"
 
+#include "common.hh"
+
 #include <algorithm>
 #include <array>
 #include <cstdint>
 #include <functional>
 #include <span>
 
-#include <cassert>
-
 namespace {
 
 constexpr std::size_t k_block_size = 16 * sizeof(std::uint32_t);
-
-template <std::uint32_t S>
-std::uint32_t rotl(std::uint32_t x) {
-    return (x << S) | (x >> (32u - S));
-}
 
 void quarter_round(std::uint32_t &a, std::uint32_t &b, std::uint32_t &c, std::uint32_t &d) {
     a += b, d ^= a, d = rotl<16>(d);
