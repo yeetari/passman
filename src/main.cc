@@ -1,15 +1,16 @@
-#include "chacha.hh"
-#include "random.hh"
+#include "cli.hh"
 
 #include <cstdio>
+#include <filesystem>
 #include <iostream>
+#include <string_view>
 #include <vector>
 
 #include <string.h>
 #include <sys/resource.h>
 
 int main(int argc, char **argv) {
-    std::vector<std::string> args(argv, argv + argc);
+    std::vector<std::string> args(argv + 1, argv + argc);
     for (int i = 1; i < argc; i++) {
         explicit_bzero(argv[i], strlen(argv[i]));
     }
@@ -20,28 +21,30 @@ int main(int argc, char **argv) {
         std::perror("setrlimit");
     }
 
-    std::array<std::uint8_t, 32> key;
-    std::array<std::uint8_t, 12> nonce;
-    get_random_bytes(key);
-    get_random_bytes(nonce);
-
-    std::array<std::uint8_t, 5> plain{'H', 'E', 'L', 'L', 'O'};
-    std::array<std::uint8_t, 5> cipher;
-    chacha20(cipher, plain, key, nonce);
-
-    std::array<std::uint8_t, 5> decrypted;
-    chacha20(decrypted, cipher, key, nonce);
-
-    for (int i = 0; i < 5; i++) {
-        std::cout << std::hex << uint32_t(plain[i]) << ' ';
+    std::string_view db_path;
+    for (const auto &arg : args) {
+        if (arg == "--version") {
+            std::cout << "passman v0.1.0\n";
+            return EXIT_SUCCESS;
+        }
+        if (arg[0] == '-') {
+            std::cerr << "fatal: unknown option '" << arg << "'\n";
+            return EXIT_FAILURE;
+        }
+        if (db_path.empty()) {
+            db_path = arg;
+            continue;
+        }
+        std::cerr << "fatal: unexpected argument '" << arg << "'\n";
+        return EXIT_FAILURE;
     }
-    std::cout << '\n';
-    for (int i = 0; i < 5; i++) {
-        std::cout << std::hex << uint32_t(cipher[i]) << ' ';
+
+    if (db_path.empty()) {
+        std::cout << "usage: " << argv[0] << " [--version] <db-file>\n";
+        return EXIT_SUCCESS;
     }
-    std::cout << '\n';
-    for (int i = 0; i < 5; i++) {
-        std::cout << std::hex << uint32_t(decrypted[i]) << ' ';
-    }
-    std::cout << '\n';
+
+    std::filesystem::path path(db_path);
+    CommandLine cli(path.filename().string());
+    cli.run();
 }
