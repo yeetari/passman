@@ -19,11 +19,6 @@ void quarter_round(std::uint32_t &a, std::uint32_t &b, std::uint32_t &c, std::ui
     c += d, b ^= c, b = rotl<7>(b);
 }
 
-std::uint32_t to_dword_le(std::span<const std::uint8_t, 4> bytes) {
-    return static_cast<std::uint32_t>(bytes[0]) | (static_cast<std::uint32_t>(bytes[1]) << 8u) |
-           (static_cast<std::uint32_t>(bytes[2]) << 16u) | (static_cast<std::uint32_t>(bytes[3]) << 24u);
-}
-
 void xor_stream(std::span<std::uint8_t> dst, std::span<const std::uint8_t> src,
                 std::span<const std::uint32_t, 16> stream) {
     const auto full_words = src.size() / sizeof(std::uint32_t);
