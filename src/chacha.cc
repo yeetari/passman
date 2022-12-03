@@ -41,6 +41,10 @@ void xor_stream(std::span<std::uint8_t> dst, std::span<const std::uint8_t> src,
         }
     }
 
+    if (src.size() % sizeof(std::uint32_t) == 0) {
+        return;
+    }
+
     auto dst_remainder = dst.subspan(full_words * sizeof(std::uint32_t));
     auto src_remainder = src.subspan(full_words * sizeof(std::uint32_t));
     auto stream_remainder = stream[full_words];
