@@ -1,5 +1,8 @@
 #include "cli.hh"
+#include "db.hh"
+#include "gui/window.hh"
 
+#include <QApplication>
 #include <cstdio>
 #include <filesystem>
 #include <iostream>
@@ -10,7 +13,7 @@
 #include <sys/resource.h>
 
 int main(int argc, char **argv) {
-    std::vector<std::string> args(argv + 1, argv + argc);
+    std::vector<std::string> args(argv, argv + argc);
     for (int i = 1; i < argc; i++) {
         explicit_bzero(argv[i], strlen(argv[i]));
     }
@@ -21,8 +24,14 @@ int main(int argc, char **argv) {
         std::perror("setrlimit");
     }
 
+    if (!args[0].ends_with("passman-cli") && !args[0].ends_with("passman-gui")) {
+        std::cerr << "fatal: multi-call binary\n";
+        return EXIT_FAILURE;
+    }
+
     std::string_view db_path;
-    for (const auto &arg : args) {
+    for (int i = 1; i < argc; i++) {
+        const auto &arg = args[i];
         if (arg == "--version") {
             std::cout << "passman v0.1.0\n";
             return EXIT_SUCCESS;
@@ -39,12 +48,19 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
+    Database database;
+    if (args[0].ends_with("passman-gui")) {
+        QApplication application(argc, argv);
+        MainWindow window(database);
+        window.show();
+        return QApplication::exec();
+    }
+
     if (db_path.empty()) {
         std::cout << "usage: " << argv[0] << " [--version] <db-file>\n";
         return EXIT_SUCCESS;
     }
 
-    std::filesystem::path path(db_path);
-    CommandLine cli(path.filename().string());
+    CommandLine cli(std::filesystem::path(db_path).filename().string());
     cli.run();
 }

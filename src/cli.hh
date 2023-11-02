@@ -1,5 +1,7 @@
 #pragma once
 
+#include "db.hh"
+
 #include <functional>
 #include <map>
 #include <string>
@@ -13,17 +15,20 @@ class CommandLine {
     };
 
     const std::string m_db_name;
+    Database &m_database;
     std::map<std::string, Command> m_commands;
     bool m_locked{false};
     bool m_unsaved_changes{false};
 
     std::string build_prompt() const;
-    void encrypt(args_list_t) const;
-    void hash(args_list_t) const;
+    void attach(args_list_t) const;
+    void secret_groups(args_list_t) const;
     void help(args_list_t) const;
+    void new_entry(args_list_t) const;
+    void new_secret_group(args_list_t) const;
 
 public:
-    explicit CommandLine(std::string db_name);
+    CommandLine(std::string db_name, Database &database);
 
     void run();
 };
